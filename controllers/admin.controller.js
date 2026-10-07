@@ -3,14 +3,12 @@ const jwt = require("jsonwebtoken");
 
 const Admin = require("../models/admin.model");
 
-// model
 const Project = require("../models/project.model");
 const Skill = require("../models/skill.model");
 const Experience = require("../models/experience.model");
 const Education = require("../models/education.model");
 const Message = require("../models/message.model");
 const Resume = require("../models/resume.model");
-
 
 const {
   adminRegisterSchema,
@@ -48,7 +46,7 @@ const registerAdmin = async (req, res) => {
       password: hashedPassword,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Admin registered successfully",
       data: {
         id: admin._id,
@@ -59,7 +57,7 @@ const registerAdmin = async (req, res) => {
   } catch (error) {
     console.error("Admin registration error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -88,7 +86,10 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    const passwordMatch = await bcrypt.compare(password, admin.password);
+    const passwordMatch = await bcrypt.compare(
+      password,
+      admin.password
+    );
 
     if (!passwordMatch) {
       return res.status(401).json({
@@ -104,7 +105,7 @@ const loginAdmin = async (req, res) => {
       process.env.ACCESS_TOKEN_SECRET,
       {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRES,
-      },
+      }
     );
 
     const refreshToken = jwt.sign(
@@ -114,20 +115,22 @@ const loginAdmin = async (req, res) => {
       process.env.REFRESH_TOKEN_SECRET,
       {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRES,
-      },
+      }
     );
 
     admin.refreshToken = refreshToken;
+
     await admin.save();
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: true,
+      sameSite: "none",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Login successful",
       accessToken,
       admin: {
@@ -139,7 +142,7 @@ const loginAdmin = async (req, res) => {
   } catch (error) {
     console.error("Admin login error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -155,7 +158,10 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
 
     const admin = await Admin.findById(decoded.adminId);
 
@@ -179,10 +185,10 @@ const refreshAccessToken = async (req, res) => {
       process.env.ACCESS_TOKEN_SECRET,
       {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRES,
-      },
+      }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Access token refreshed",
       accessToken,
       admin: {
@@ -192,6 +198,8 @@ const refreshAccessToken = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Refresh token error:", error.message);
+
     return res.status(401).json({
       message: "Invalid or expired refresh token",
     });
@@ -203,7 +211,9 @@ const logoutAdmin = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
 
     if (refreshToken) {
-      const admin = await Admin.findOne({ refreshToken });
+      const admin = await Admin.findOne({
+        refreshToken,
+      });
 
       if (admin) {
         admin.refreshToken = null;
@@ -213,15 +223,18 @@ const logoutAdmin = async (req, res) => {
 
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: true,
+      sameSite: "none",
+      path: "/",
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Logout successful",
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Admin logout error:", error.message);
+
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -230,7 +243,7 @@ const logoutAdmin = async (req, res) => {
 const getCurrentAdmin = async (req, res) => {
   try {
     const admin = await Admin.findById(req.admin.adminId).select(
-      "-password -refreshToken",
+      "-password -refreshToken"
     );
 
     if (!admin) {
@@ -239,19 +252,18 @@ const getCurrentAdmin = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Admin fetched successfully",
       admin,
     });
   } catch (error) {
     console.error("Get current admin error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
 };
-
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -271,7 +283,7 @@ const getDashboardStats = async (req, res) => {
       Resume.countDocuments(),
     ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Dashboard statistics fetched successfully",
       data: {
         totalProjects,
@@ -285,7 +297,7 @@ const getDashboardStats = async (req, res) => {
   } catch (error) {
     console.error("Get dashboard stats error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -293,25 +305,26 @@ const getDashboardStats = async (req, res) => {
 
 const getRecentData = async (req, res) => {
   try {
-    const [projects, messages, experiences, skills] = await Promise.all([
-      Project.find()
-        .sort({ createdAt: -1 })
-        .limit(5),
+    const [projects, messages, experiences, skills] =
+      await Promise.all([
+        Project.find()
+          .sort({ createdAt: -1 })
+          .limit(5),
 
-      Message.find()
-        .sort({ createdAt: -1 })
-        .limit(5),
+        Message.find()
+          .sort({ createdAt: -1 })
+          .limit(5),
 
-      Experience.find()
-        .sort({ createdAt: -1 })
-        .limit(5),
+        Experience.find()
+          .sort({ createdAt: -1 })
+          .limit(5),
 
-      Skill.find()
-        .sort({ createdAt: -1 })
-        .limit(5),
-    ]);
+        Skill.find()
+          .sort({ createdAt: -1 })
+          .limit(5),
+      ]);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Recent data fetched successfully",
       data: {
         projects,
@@ -323,18 +336,18 @@ const getRecentData = async (req, res) => {
   } catch (error) {
     console.error("Get recent data error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
 };
 
-module.exports = { 
+module.exports = {
   registerAdmin,
   loginAdmin,
   refreshAccessToken,
   logoutAdmin,
   getCurrentAdmin,
   getDashboardStats,
-  getRecentData
+  getRecentData,
 };
