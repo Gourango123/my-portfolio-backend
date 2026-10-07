@@ -11,7 +11,6 @@ const experienceRouter = require("./routes/experience.route");
 const educationRouter = require("./routes/education.route");
 const resumeRouter = require("./routes/resume.route");
 
-// middleware
 const notFound = require("./middleware/notFound.middleware");
 const errorHandler = require("./middleware/error.middleware");
 
@@ -21,16 +20,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://my-portfolio-frontend-dusky.vercel.app",
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-  }),
+  })
 );
 
 app.use(cookieParser());
 
-// router
 app.use("/api/messages", messageRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/projects", projectRouter);
