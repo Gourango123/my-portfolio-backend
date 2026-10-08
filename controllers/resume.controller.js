@@ -18,45 +18,51 @@ const uploadResume = async (req, res) => {
     const existingResume = await Resume.findOne();
 
     if (existingResume) {
-      await cloudinary.uploader.destroy(existingResume.publicId, {
-        resource_type: "raw",
-      });
+      await cloudinary.uploader.destroy(
+        existingResume.publicId,
+        {
+          resource_type: "raw",
+        }
+      );
 
-      await Resume.findByIdAndDelete(existingResume._id);
+      await Resume.findByIdAndDelete(
+        existingResume._id
+      );
     }
 
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: "raw",
-        folder: "portfolio/resume",
-        public_id: "resume",
-        overwrite: true,
-        format: "pdf",
-      },
-      async (error, result) => {
-        if (error) {
-          console.error(
-            "Cloudinary upload error:",
-            error.message
-          );
+    const uploadStream =
+      cloudinary.uploader.upload_stream(
+        {
+          resource_type: "raw",
+          folder: "portfolio/resume",
+          public_id: "resume",
+          overwrite: true,
+          format: "pdf",
+        },
+        async (error, result) => {
+          if (error) {
+            console.error(
+              "Cloudinary upload error:",
+              error.message
+            );
 
-          return res.status(500).json({
-            message: "Resume upload failed",
+            return res.status(500).json({
+              message: "Resume upload failed",
+            });
+          }
+
+          const resume = await Resume.create({
+            name: req.file.originalname,
+            url: result.secure_url,
+            publicId: result.public_id,
+          });
+
+          return res.status(201).json({
+            message: "Resume uploaded successfully",
+            data: resume,
           });
         }
-
-        const resume = await Resume.create({
-          name: req.file.originalname,
-          url: result.secure_url,
-          publicId: result.public_id,
-        });
-
-        return res.status(201).json({
-          message: "Resume uploaded successfully",
-          data: resume,
-        });
-      }
-    );
+      );
 
     uploadStream.end(req.file.buffer);
   } catch (error) {
@@ -97,6 +103,39 @@ const getResume = async (req, res) => {
   }
 };
 
+const downloadResume = async (req, res) => {
+  try {
+    const resume = await Resume.findOne();
+
+    if (!resume) {
+      return res.status(404).json({
+        message: "Resume not found",
+      });
+    }
+
+    const signedUrl = cloudinary.url(
+      resume.publicId,
+      {
+        resource_type: "raw",
+        type: "upload",
+        secure: true,
+        sign_url: true,
+      }
+    );
+
+    return res.redirect(signedUrl);
+  } catch (error) {
+    console.error(
+      "Download resume error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message: "Failed to download resume",
+    });
+  }
+};
+
 const deleteResume = async (req, res) => {
   try {
     const resume = await Resume.findOne();
@@ -107,11 +146,16 @@ const deleteResume = async (req, res) => {
       });
     }
 
-    await cloudinary.uploader.destroy(resume.publicId, {
-      resource_type: "raw",
-    });
+    await cloudinary.uploader.destroy(
+      resume.publicId,
+      {
+        resource_type: "raw",
+      }
+    );
 
-    await Resume.findByIdAndDelete(resume._id);
+    await Resume.findByIdAndDelete(
+      resume._id
+    );
 
     return res.status(200).json({
       message: "Resume deleted successfully",
@@ -131,5 +175,6 @@ const deleteResume = async (req, res) => {
 module.exports = {
   uploadResume,
   getResume,
+  downloadResume,
   deleteResume,
 };

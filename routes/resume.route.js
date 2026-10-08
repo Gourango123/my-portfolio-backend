@@ -6,15 +6,27 @@ const upload = require("../middleware/upload.middleware");
 const {
   uploadResume,
   getResume,
+  downloadResume,
   deleteResume,
 } = require("../controllers/resume.controller");
 
 const router = express.Router();
 
-router.post("/", authMiddleware, upload.single("resume"), uploadResume);
+router.post(
+  "/",
+  authMiddleware,
+  upload.single("resume"),
+  uploadResume
+);
 
 router.get("/", getResume);
 
-router.delete("/", authMiddleware, deleteResume);
+router.get("/download", downloadResume);
+
+router.delete(
+  "/",
+  authMiddleware,
+  deleteResume
+);
 
 module.exports = router;
