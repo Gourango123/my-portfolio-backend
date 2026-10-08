@@ -9,6 +9,7 @@ const Experience = require("../models/experience.model");
 const Education = require("../models/education.model");
 const Message = require("../models/message.model");
 const Resume = require("../models/resume.model");
+const About = require("../models/about.model");
 
 const {
   adminRegisterSchema,
@@ -298,6 +299,7 @@ const getDashboardStats = async (req, res) => {
       totalEducations,
       totalMessages,
       totalResumes,
+      totalAbout,
     ] = await Promise.all([
       Project.countDocuments(),
       Skill.countDocuments(),
@@ -305,6 +307,7 @@ const getDashboardStats = async (req, res) => {
       Education.countDocuments(),
       Message.countDocuments(),
       Resume.countDocuments(),
+      About.countDocuments(),
     ]);
 
     return res.status(200).json({
@@ -316,6 +319,7 @@ const getDashboardStats = async (req, res) => {
         totalEducations,
         totalMessages,
         totalResumes,
+        totalAbout,
       },
     });
   } catch (error) {
