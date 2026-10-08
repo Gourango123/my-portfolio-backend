@@ -10,6 +10,7 @@ const skillRouter = require("./routes/skill.route");
 const experienceRouter = require("./routes/experience.route");
 const educationRouter = require("./routes/education.route");
 const resumeRouter = require("./routes/resume.route");
+const aboutRouter = require("./router/about.route");
 
 const notFound = require("./middleware/notFound.middleware");
 const errorHandler = require("./middleware/error.middleware");
@@ -47,6 +48,7 @@ app.use("/api/skills", skillRouter);
 app.use("/api/experiences", experienceRouter);
 app.use("/api/educations", educationRouter);
 app.use("/api/resume", resumeRouter);
+app.use("/api/about", aboutRouter);
 
 app.get("/", (req, res) => {
   res.json({
