@@ -30,6 +30,14 @@ const registerAdmin = async (req, res) => {
 
     const { name, email, password } = value;
 
+    const adminCount = await Admin.countDocuments();
+
+    if (adminCount > 0) {
+      return res.status(403).json({
+        message: "Admin registration is currently disabled",
+      });
+    }
+
     const existingAdmin = await Admin.findOne({ email });
 
     if (existingAdmin) {
@@ -56,6 +64,22 @@ const registerAdmin = async (req, res) => {
     });
   } catch (error) {
     console.error("Admin registration error:", error.message);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const checkAdminExists = async (req, res) => {
+  try {
+    const adminCount = await Admin.countDocuments();
+
+    return res.status(200).json({
+      exists: adminCount > 0,
+    });
+  } catch (error) {
+    console.error("Check admin error:", error.message);
 
     return res.status(500).json({
       message: "Internal server error",
@@ -344,6 +368,7 @@ const getRecentData = async (req, res) => {
 
 module.exports = {
   registerAdmin,
+  checkAdminExists,
   loginAdmin,
   refreshAccessToken,
   logoutAdmin,
