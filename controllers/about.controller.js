@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+const Joi = require("joi");
 const About = require("../models/about.model");
 const aboutSchema = require("../validators/about.validator");
 
@@ -101,6 +103,197 @@ const updateAbout = async (req, res) => {
   }
 };
 
+const addFeature = async (req, res) => {
+  try {
+    const { error, value } = Joi.object({
+      icon: Joi.string()
+        .trim()
+        .min(2)
+        .max(50)
+        .required(),
+
+      title: Joi.string()
+        .trim()
+        .min(2)
+        .max(100)
+        .required(),
+
+      description: Joi.string()
+        .trim()
+        .min(10)
+        .max(300)
+        .required(),
+    }).validate(req.body, {
+      abortEarly: false,
+    });
+
+    if (error) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: error.details.map((err) => err.message),
+      });
+    }
+
+    const about = await About.findOne();
+
+    if (!about) {
+      return res.status(404).json({
+        message: "About section not found",
+      });
+    }
+
+    if (about.features.length >= 6) {
+      return res.status(400).json({
+        message: "Maximum 6 features are allowed",
+      });
+    }
+
+    about.features.push(value);
+
+    await about.save();
+
+    return res.status(201).json({
+      message: "About feature added successfully",
+      data: about,
+    });
+  } catch (error) {
+    console.error("Add about feature error:", error.message);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateFeature = async (req, res) => {
+  try {
+    const { featureId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(featureId)) {
+      return res.status(400).json({
+        message: "Invalid feature ID",
+      });
+    }
+
+    const { error, value } = Joi.object({
+      icon: Joi.string()
+        .trim()
+        .min(2)
+        .max(50)
+        .required(),
+
+      title: Joi.string()
+        .trim()
+        .min(2)
+        .max(100)
+        .required(),
+
+      description: Joi.string()
+        .trim()
+        .min(10)
+        .max(300)
+        .required(),
+    }).validate(req.body, {
+      abortEarly: false,
+    });
+
+    if (error) {
+      return res.status(400).json({
+        message: "Validation failed",
+        errors: error.details.map((err) => err.message),
+      });
+    }
+
+    const about = await About.findOne();
+
+    if (!about) {
+      return res.status(404).json({
+        message: "About section not found",
+      });
+    }
+
+    const feature = about.features.id(featureId);
+
+    if (!feature) {
+      return res.status(404).json({
+        message: "Feature not found",
+      });
+    }
+
+    feature.icon = value.icon;
+    feature.title = value.title;
+    feature.description = value.description;
+
+    await about.save();
+
+    return res.status(200).json({
+      message: "About feature updated successfully",
+      data: about,
+    });
+  } catch (error) {
+    console.error(
+      "Update about feature error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteFeature = async (req, res) => {
+  try {
+    const { featureId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(featureId)) {
+      return res.status(400).json({
+        message: "Invalid feature ID",
+      });
+    }
+
+    const about = await About.findOne();
+
+    if (!about) {
+      return res.status(404).json({
+        message: "About section not found",
+      });
+    }
+
+    if (about.features.length <= 1) {
+      return res.status(400).json({
+        message: "At least one feature is required",
+      });
+    }
+
+    const feature = about.features.id(featureId);
+
+    if (!feature) {
+      return res.status(404).json({
+        message: "Feature not found",
+      });
+    }
+
+    feature.deleteOne();
+
+    await about.save();
+
+    return res.status(200).json({
+      message: "About feature deleted successfully",
+      data: about,
+    });
+  } catch (error) {
+    console.error(
+      "Delete about feature error:",
+      error.message
+    );
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
 const deleteAbout = async (req, res) => {
   try {
     const about = await About.findOneAndDelete();
@@ -127,5 +320,8 @@ module.exports = {
   createAbout,
   getAbout,
   updateAbout,
+  addFeature,
+  updateFeature,
+  deleteFeature,
   deleteAbout,
 };

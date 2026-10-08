@@ -47,7 +47,8 @@ const aboutSchema = Joi.object({
           .required(),
       })
     )
-    .length(4)
+    .min(1)
+    .max(6)
     .required(),
 });
 
