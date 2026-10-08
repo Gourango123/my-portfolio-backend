@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const Project = require("../models/project.model");
 const projectSchema = require("../validators/project.validator");
 
@@ -16,14 +18,14 @@ const createProject = async (req, res) => {
 
     const project = await Project.create(value);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Project created successfully",
       data: project,
     });
   } catch (error) {
     console.error("Create project error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -32,6 +34,7 @@ const createProject = async (req, res) => {
 const getProjects = async (req, res) => {
   try {
     const page = Math.max(Number(req.query.page) || 1, 1);
+
     const limit = Math.min(
       Math.max(Number(req.query.limit) || 10, 1),
       50
@@ -41,24 +44,29 @@ const getProjects = async (req, res) => {
 
     const search = req.query.search?.trim() || "";
 
-    const filter = search
+    const escapedSearch = search.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
+
+    const filter = escapedSearch
       ? {
           $or: [
             {
               title: {
-                $regex: search,
+                $regex: escapedSearch,
                 $options: "i",
               },
             },
             {
               description: {
-                $regex: search,
+                $regex: escapedSearch,
                 $options: "i",
               },
             },
             {
               technologies: {
-                $regex: search,
+                $regex: escapedSearch,
                 $options: "i",
               },
             },
@@ -71,12 +79,13 @@ const getProjects = async (req, res) => {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
+
       Project.countDocuments(filter),
     ]);
 
     const totalPages = Math.ceil(totalProjects / limit);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Projects fetched successfully",
       data: projects,
       pagination: {
@@ -91,7 +100,7 @@ const getProjects = async (req, res) => {
   } catch (error) {
     console.error("Get projects error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -101,6 +110,12 @@ const getProjectById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid project ID",
+      });
+    }
+
     const project = await Project.findById(id);
 
     if (!project) {
@@ -109,14 +124,14 @@ const getProjectById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Project fetched successfully",
       data: project,
     });
   } catch (error) {
     console.error("Get project error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -125,6 +140,12 @@ const getProjectById = async (req, res) => {
 const updateProject = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid project ID",
+      });
+    }
 
     const { error, value } = projectSchema.validate(req.body, {
       abortEarly: false,
@@ -152,14 +173,14 @@ const updateProject = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Project updated successfully",
       data: project,
     });
   } catch (error) {
     console.error("Update project error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -169,6 +190,12 @@ const deleteProject = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid project ID",
+      });
+    }
+
     const project = await Project.findByIdAndDelete(id);
 
     if (!project) {
@@ -177,13 +204,13 @@ const deleteProject = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Project deleted successfully",
     });
   } catch (error) {
     console.error("Delete project error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }

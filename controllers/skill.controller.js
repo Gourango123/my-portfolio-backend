@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const Skill = require("../models/skill.model");
 const skillSchema = require("../validators/skill.validator");
 
@@ -26,14 +28,14 @@ const createSkill = async (req, res) => {
 
     const skill = await Skill.create(value);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Skill created successfully",
       data: skill,
     });
   } catch (error) {
     console.error("Create skill error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -43,14 +45,14 @@ const getSkills = async (req, res) => {
   try {
     const skills = await Skill.find().sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Skills fetched successfully",
       data: skills,
     });
   } catch (error) {
     console.error("Get skills error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -60,6 +62,12 @@ const getSkillById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid skill ID",
+      });
+    }
+
     const skill = await Skill.findById(id);
 
     if (!skill) {
@@ -68,14 +76,14 @@ const getSkillById = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Skill fetched successfully",
       data: skill,
     });
   } catch (error) {
     console.error("Get skill error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -84,6 +92,12 @@ const getSkillById = async (req, res) => {
 const updateSkill = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid skill ID",
+      });
+    }
 
     const { error, value } = skillSchema.validate(req.body, {
       abortEarly: false,
@@ -122,14 +136,14 @@ const updateSkill = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Skill updated successfully",
       data: skill,
     });
   } catch (error) {
     console.error("Update skill error:", error.message);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -139,6 +153,12 @@ const deleteSkill = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid skill ID",
+      });
+    }
+
     const skill = await Skill.findByIdAndDelete(id);
 
     if (!skill) {
@@ -147,14 +167,14 @@ const deleteSkill = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Skill deleted successfully",
     });
   } catch (error) {
     console.error("Delete skill error:", error.message);
 
-    res.status(500).json({
-      message: "Skill deleted successfully",
+    return res.status(500).json({
+      message: "Internal server error",
     });
   }
 };
