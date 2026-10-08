@@ -9,6 +9,12 @@ const uploadResume = async (req, res) => {
       });
     }
 
+    if (req.file.mimetype !== "application/pdf") {
+      return res.status(400).json({
+        message: "Only PDF files are allowed",
+      });
+    }
+
     const existingResume = await Resume.findOne();
 
     if (existingResume) {
@@ -25,10 +31,14 @@ const uploadResume = async (req, res) => {
         folder: "portfolio/resume",
         public_id: "resume",
         overwrite: true,
+        format: "pdf",
       },
       async (error, result) => {
         if (error) {
-          console.error("Cloudinary upload error:", error.message);
+          console.error(
+            "Cloudinary upload error:",
+            error.message
+          );
 
           return res.status(500).json({
             message: "Resume upload failed",
@@ -41,7 +51,7 @@ const uploadResume = async (req, res) => {
           publicId: result.public_id,
         });
 
-        res.status(201).json({
+        return res.status(201).json({
           message: "Resume uploaded successfully",
           data: resume,
         });
@@ -50,9 +60,12 @@ const uploadResume = async (req, res) => {
 
     uploadStream.end(req.file.buffer);
   } catch (error) {
-    console.error("Upload resume error:", error.message);
+    console.error(
+      "Upload resume error:",
+      error.message
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -68,14 +81,17 @@ const getResume = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Resume fetched successfully",
       data: resume,
     });
   } catch (error) {
-    console.error("Get resume error:", error.message);
+    console.error(
+      "Get resume error:",
+      error.message
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
@@ -97,13 +113,16 @@ const deleteResume = async (req, res) => {
 
     await Resume.findByIdAndDelete(resume._id);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Resume deleted successfully",
     });
   } catch (error) {
-    console.error("Delete resume error:", error.message);
+    console.error(
+      "Delete resume error:",
+      error.message
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Internal server error",
     });
   }
