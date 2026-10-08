@@ -28,6 +28,8 @@ const aboutSchema = Joi.object({
   features: Joi.array()
     .items(
       Joi.object({
+        _id: Joi.string().optional(),
+
         icon: Joi.string()
           .trim()
           .min(2)
