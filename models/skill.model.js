@@ -8,16 +8,20 @@ const skillSchema = new mongoose.Schema(
       trim: true,
       unique: true,
     },
+
     category: {
       type: String,
       required: true,
       trim: true,
     },
+
     level: {
-      type: String,
+      type: Number,
       required: true,
-      trim: true,
+      min: 0,
+      max: 100,
     },
+
     icon: {
       type: String,
       trim: true,
